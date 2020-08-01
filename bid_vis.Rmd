@@ -1,10 +1,10 @@
 ---
-title: "Desigualdades constantes sobre el ingreso per capita de los hogares"
+title: "Desigualdades constantes sobre el ingreso per cápita de los hogares"
 output: 
   flexdashboard::flex_dashboard:
     social: [ "menu" ]
     navbar:
-      - { title: "Repositorio", href: "https://www.aru.org.bo", align: right }
+      - { title: "Repositorio", href: "https://github.com/AlvaroLimber/bid_vis/", align: right }
     theme: lumen
 ---
 
