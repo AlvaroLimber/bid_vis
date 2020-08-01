@@ -1,11 +1,10 @@
 ---
-title: "Sociedades desiguales y un pronóstico desalentador"
+title: "Desigualdades constantes sobre el ingreso per capita de los hogares"
 output: 
   flexdashboard::flex_dashboard:
     social: [ "menu" ]
     navbar:
       - { title: "Repositorio", href: "https://www.aru.org.bo", align: right }
-    orientation: rows
     theme: lumen
 ---
 
@@ -23,7 +22,8 @@ library(convey)
 conf <- spark_config()
   conf$`sparklyr.shell.driver-memory` <- "4G"
   conf$spark.memory.fraction <- 0.8 
-sc <- spark_connect(master = "local", version = "2.4.3",config = conf)  
+sc <- spark_connect(master = "local", version = "2.4.3",config = conf)
+#bid.csv es la base 
 bd<-spark_read_csv(sc,path="C:\\Users\\ALVARO\\Desktop\\db_bolivia\\bid\\bid.csv",name="bid")
 #bd<-spark_read_csv(sc,path="C:\\Users\\ALVARO\\Desktop\\db_bolivia\\bid\\bidsample.csv",name="bid")
 
@@ -99,6 +99,30 @@ save(mdiff,bdpen,mgini,file="bid.RData")
 spark_disconnect(sc)
 ```
 
+Introducción  {.sidebar}
+===============================================================
+
+### Fuente de datos
+
+Base de datos del concurso:  "CONCURSO VISUALIZACION DESIGUALDAD.csv"
+
+
+### Aclaraciones
+
+* Para cada gráfico se considera los factores de expansión para cada año y país
+* Los indicadores se generan a nivel de los hogares
+* Las discontinuidades en las gráficas para algunos países se debe a la ausencia de información para ese año.
+* Para el cociente de los centiles 95/5, no se muestran todos los valores, se presentan únicamente los del rango de 0 a 200.
+
+### Index Pen's
+
+Es la suma de la variable ipcm por centil ($q$) dividido entre la suma máxima entre los centiles (medida relativa escalada a %).
+
+$$I_{Pen's,q}=\frac{\sum ipcm_q}{max(\sum ipcm_q)}*100$$
+
+Principal
+===============================================================
+
 ```{r}
 library(ggplot2)
 library(dplyr)
@@ -106,32 +130,45 @@ library(plotly)
 library(gganimate)
 ```
 
-
-Principal
-===============================================================
-
-Row 
+Column
 ---------------------------------------------------------------
 
-### Desfile de Pen's  
-```{r}
-load("C:/Users/ALVARO/Documents/bid.RData")
+### Desfile de Pen's  (Dinámico)
 
-ggplot(bdpen,aes(qq,index))+geom_point(aes(color=pais))+xlab("Centiles (q)")+ylab("suma(ipcm_q)/max(suma(ipcm_q))")+transition_time(year)+labs(title = 'Año: {frame_time}') 
+```{r,eval=F}
+load(url("https://github.com/AlvaroLimber/bid_vis/raw/master/bid.RData"))
+ggplot(bdpen,aes(qq,index))+geom_point(aes(color=pais))+xlab("Centiles (q)")+ylab("Index Pen's")+transition_time(year)+labs(title = 'Año:  {frame_time}') 
 
 #ggplot(bdpen ,aes(qq,index))+geom_point(aes(color=pais))+xlab("Centiles (q)")+ylab("suma(ipcm_q)/max(suma(ipcm_q))")+transition_time(year)
+anim_save("C:\\Users\\ALVARO\\Documents\\GitHub\\bid_vis\\pen.gif")
 ```
 
-### Percentil 95 vs 5. 1999 - 2030
+![](pen.gif)
+
+### Desfile de Pen's, 2018
+
 ```{r}
-p2<-ggplot(mdiff,aes(year,round(index,2)))+geom_point(aes(color=pais))+facet_wrap(~pais)+ylim(0,200)
+load(url("https://github.com/AlvaroLimber/bid_vis/raw/master/bid.RData"))
+p1<-ggplot(bdpen %>% filter(year==2018),aes(qq,round(index,2)))+geom_point(aes(color=pais))+xlab("Centiles")+ylab("Index Pen's") + theme(legend.title=element_blank())
+ggplotly(p1)
+```
+
+Column
+---------------------------------------------------------------
+
+### Cociente entre centil 95 y 5. Años 1999 - 2018
+```{r}
+p2<-ggplot(mdiff,aes(year,round(index,2)))+geom_point(aes(color=pais))+facet_wrap(~pais,ncol=3)+ylim(0,200)+ theme(legend.position = "none")+ylab("c95/c5")+xlab("Año")
 ggplotly(p2)
 ```
 
-### Gini. 1999 - 2030
+Column
+---------------------------------------------------------------
+
+### Gini. 1999 - 2018
 ```{r}
 #p2<-ggplot(mdiff,aes(year,index))+geom_point(color="darkblue")+facet_grid(~pais)+ylim(5,100)
 #ggplotly(p2)
-p2<-ggplot(mgini,aes(year,index))+geom_point(aes(color=pais))+ylim(0.25,0.75)
+p2<-ggplot(mgini,aes(year,index))+geom_line(aes(color=pais))+ylim(0.4,0.75)+ylab("Gini")+xlab("Año")+ theme(legend.title=element_blank())
 ggplotly(p2)
 ```
